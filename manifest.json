@@ -12,6 +12,7 @@
 
   "author": "Imp",
   "permissions": [
-	"proxy"
+	"proxy",
+	"http://letushide.com/location/cn/"
   ]
 }
