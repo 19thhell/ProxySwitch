@@ -3,6 +3,7 @@ $(document).ready(function() {
 	xhr.open("GET", "http://letushide.com/location/cn/list_of_free_China_proxy_servers", true);
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
+			index = 0;
 			html = xhr.responseText;
 			page = $('<div></div>');
 			page.html(html);
@@ -18,43 +19,55 @@ $(document).ready(function() {
 				protocol = tds[3].childNodes[0].innerHTML;
 				speed = tds[5].className[1];
 				reliability = tds[6].innerHTML;
-				new_body += "<tr style='background-color:" + color[i % 2] + ";text-align:center;'><td><button id='" + id + "'>Connect</button></td><td>" + host + "</td><td>" + port + "</td><td>" + protocol + "</td><td>" + speed + "</td><td>" + reliability + "</td></tr>";
+				new_body += "<tr style='background-color:" + color[i % 2] + ";text-align:center;'><td style='width:75px;'><button id='" + id + "'>Connect</button></td><td>" + host + "</td><td>" + port + "</td><td>" + protocol + "</td><td>" + speed + "</td><td>" + reliability + "</td></tr>";
 			}
-			document.write("<div><table><thead><tr style='color:navy;text-align:center;'><td><button id='0'>Reset</button></td><td>Host</td><td>Port</td><td>Protocol</td><td>Speed</td><td>Reliability</td></tr></thead>" + new_body + "</table></div>");
-			$('button').click(function() {
-				id = $(this).attr('id');
-				if (id == '0') {
-					chrome.proxy.settings.clear(
-						{scope: 'regular'},
-						function() {});
-					console.log('reset');
-				}
-				else {
-					next = $(this).parent().next();
-					ip = next.text();
-					next = next.next();
-					ports = next.text();
-					next = next.next();
-					protocol = next.text();
-					config = {
-						mode: 'fixed_servers',
-						rules: {
-							singleProxy: {
-								scheme: protocol.toLowerCase(),
-								host: ip,
-								port: parseInt(ports)
+			if (new_body == "") {
+				document.write("<div style='color:red;width:200px;text-align:center;'>Failed to load proxies.</div>");
+			}
+			else {
+				document.write("<div><table><thead><tr style='color:navy;text-align:center;'><td style='width:75px;'><button id='0'>Reset</button></td><td>Host</td><td>Port</td><td>Scheme</td><td>Speed</td><td>Reliability</td></tr></thead>" + new_body + "</table></div>");
+				$('button').click(function() {
+					id = $(this).attr('id');
+					if (id == '0') {
+						chrome.proxy.settings.clear(
+							{scope: 'regular'},
+							function() {});
+						console.log('reset');
+						$('button#' + index.toString()).text('Connect');
+						$('button#' + index.toString()).css('color', '');
+					}
+					else {
+						next = $(this).parent().next();
+						ip = next.text();
+						next = next.next();
+						ports = next.text();
+						next = next.next();
+						protocol = next.text();
+						config = {
+							mode: 'fixed_servers',
+							rules: {
+								singleProxy: {
+									scheme: protocol.toLowerCase(),
+									host: ip,
+									port: parseInt(ports)
+								},
+								bypassList: ['*google*', '*gmail*', '*letushide.com*']
 							}
 						}
+						chrome.proxy.settings.set(
+								{value: config, scope: 'regular'},
+								function() {});
+						console.log(protocol.toLowerCase() + "://" + ip + ":" + ports);
+						if (index > 0) {
+							$('button#' + index.toString()).text('Connect');
+							$('button#' + index.toString()).css('color', '');
+						}
+						index = id;
+						$(this).text('Proxied');
+						$(this).css('color', 'navy');
 					}
-					chrome.proxy.settings.set(
-							{value: config, scope: 'regular'},
-							function() {});
-					console.log(protocol.toLowerCase() + "://" + ip + ":" + ports);
-					chrome.proxy.settings.get(
-							  {'incognito': false},
-							  function(config) {console.log(JSON.stringify(config));});
-				}
-			});
+				});
+			}
 		}
 	}
 	xhr.send();
