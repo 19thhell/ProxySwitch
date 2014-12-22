@@ -22,14 +22,38 @@ $(document).ready(function() {
 			}
 			document.write("<div><table><thead><tr style='color:navy;text-align:center;'><td><button id='0'>Reset</button></td><td>Host</td><td>Port</td><td>Protocol</td><td>Speed</td><td>Reliability</td></tr></thead>" + new_body + "</table></div>");
 			$('button').click(function() {
-				console.log($(this).attr('id'));
-				next = $(this).parent().next();
-				ip = next.text();
-				next = next.next();
-				port = next.text();
-				next = next.next();
-				protocol = next.text();
-				console.log(protocol + "://" + ip + ":" + port);
+				id = $(this).attr('id');
+				if (id == '0') {
+					chrome.proxy.settings.clear(
+						{scope: 'regular'},
+						function() {});
+					console.log('reset');
+				}
+				else {
+					next = $(this).parent().next();
+					ip = next.text();
+					next = next.next();
+					ports = next.text();
+					next = next.next();
+					protocol = next.text();
+					config = {
+						mode: 'fixed_servers',
+						rules: {
+							singleProxy: {
+								scheme: protocol.toLowerCase(),
+								host: ip,
+								port: parseInt(ports)
+							}
+						}
+					}
+					chrome.proxy.settings.set(
+							{value: config, scope: 'regular'},
+							function() {});
+					console.log(protocol.toLowerCase() + "://" + ip + ":" + ports);
+					chrome.proxy.settings.get(
+							  {'incognito': false},
+							  function(config) {console.log(JSON.stringify(config));});
+				}
 			});
 		}
 	}
